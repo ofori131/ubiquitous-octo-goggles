@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEAF Lab | Pricing Engine</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root{
+  --navy:#2a4782;
+  --navy-dark:#1d3462;
+  --blue:#1c88ff;
+  --green:#37b24d;
+  --green-bg:#e9f9ec;
+  --bg:#ecf4f6;
+  --white:#ffffff;
+  --ink:#1c2430;
+  --ink-soft:#5b677a;
+  --line:#d9e3ea;
+  --coral:#f2b8a4;
+  --coral-bg:#fdf1ec;
+  --radius:14px;
+  --shadow:0 2px 10px rgba(42,71,130,0.08);
+  --shadow-lg:0 12px 32px rgba(42,71,130,0.16);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+}
+h1,h2,h3,h4,.display{font-family:'Poppins',sans-serif;}
+button{font-family:inherit;}
+:focus-visible{outline:3px solid var(--blue); outline-offset:2px;}
+@media (prefers-reduced-motion: reduce){ *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;} }
+
+/* ---------- header ---------- */
+.topbar{
+  background:var(--white);
+  border-bottom:1px solid var(--line);
+  padding:12px 28px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:40;
+  flex-wrap:wrap; gap:10px;
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand .sub{font-family:'Poppins'; font-weight:600; font-size:16px; color:var(--navy-dark); letter-spacing:.01em;}
+
+.stepnav{display:flex; gap:6px;}
+.stepnav button{
+  border:none; background:transparent; padding:9px 16px; border-radius:999px;
+  font-weight:600; font-size:13.5px; color:var(--navy-dark); cursor:pointer;
+  display:flex; align-items:center; gap:8px; transition:background .15s, color .15s;
+}
+.stepnav button .dot{width:18px; height:18px; border-radius:50%; background:var(--line); color:var(--white); font-size:10.5px; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;}
+.stepnav button.active{background:var(--navy); color:var(--white);}
+.stepnav button.active .dot{background:var(--white); color:var(--navy);}
+.stepnav button.done .dot{background:var(--green); color:var(--white);}
+.stepnav button:hover:not(.active){background:var(--bg);}
+
+/* ---------- hero / wave ---------- */
+.hero{background:linear-gradient(135deg, var(--navy-dark), var(--navy) 60%, var(--blue)); color:var(--white); padding:30px 28px 56px;}
+.hero-inner{max-width:1180px; margin:0 auto;}
+.hero h1{margin:0 0 6px; font-size:24px; font-weight:600;}
+.hero p{margin:0; opacity:.85; max-width:620px; font-size:14px;}
+.wave{display:block; width:100%; height:34px; margin-top:-1px;}
+
+/* ---------- layout ---------- */
+main{max-width:1180px; margin:-30px auto 80px; padding:0 28px; position:relative; z-index:5;}
+.panel{display:none;}
+.panel.active{display:block; animation:fade .25s ease;}
+@keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+.card{background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); padding:26px 28px; margin-bottom:20px;}
+.card h2{margin:0 0 4px; font-size:19px; color:var(--navy-dark); font-weight:600;}
+.card .desc{color:var(--ink-soft); font-size:13.5px; margin:0 0 18px;}
+.card h3{font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--navy); margin:0 0 14px; font-weight:700; display:flex; align-items:center;}
+
+.grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;}
+.field{display:flex; flex-direction:column; gap:6px;}
+.field label{font-size:12.5px; font-weight:600; color:var(--ink-soft); display:flex; align-items:center;}
+.field input, .field select, .field textarea{
+  border:1.5px solid var(--line); border-radius:9px; padding:10px 12px; font-size:14px;
+  font-family:inherit; background:var(--white); color:var(--ink); width:100%;
+}
+.field input:focus, .field select:focus, .field textarea:focus{border-color:var(--blue);}
+.field textarea{resize:vertical; min-height:64px;}
+.divider{height:1px; background:var(--line); margin:22px 0;}
+
+/* help tooltip */
+.help-btn{
+  width:17px; height:17px; border-radius:50%; border:1.5px solid #b7c3d6; background:#fff; color:var(--ink-soft);
+  font-size:10.5px; font-weight:700; line-height:1; cursor:pointer; display:inline-flex; align-items:center;
+  justify-content:center; padding:0; margin-left:6px; flex-shrink:0;
+}
+.help-btn:hover, .help-btn[aria-expanded="true"]{background:var(--navy); border-color:var(--navy); color:#fff;}
+.tipbox{position:fixed; max-width:280px; background:var(--navy-dark); color:#fff; font-size:12.5px; line-height:1.5; padding:10px 13px; border-radius:10px; box-shadow:var(--shadow-lg); z-index:300; display:none;}
+.tipbox.show{display:block;}
+
+/* explainer */
+.explainer{margin-bottom:18px;}
+.explainer-toggle{display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:13px; font-weight:600; color:var(--navy-dark); cursor:pointer; width:100%; text-align:left;}
+.explainer-toggle .chev{margin-left:auto; transition:transform .15s; font-size:11px;}
+.explainer.open .chev{transform:rotate(180deg);}
+.explainer-body{display:none; padding:14px 16px; font-size:13.5px; color:var(--ink-soft); background:#fbfdfe; border:1px solid var(--line); border-top:none; border-radius:0 0 10px 10px;}
+.explainer.open .explainer-body{display:block;}
+
+/* legend */
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--ink-soft); margin-bottom:18px;}
+.legend span{display:inline-flex; align-items:center; gap:6px;}
+.swatch{width:12px; height:12px; border-radius:3px; display:inline-block;}
+.sw-blue{background:#dbeeff; border:1px solid var(--blue);}
+.sw-green{background:var(--green-bg); border:1px solid var(--green);}
+.sw-white{background:#fff; border:1px solid var(--line);}
+
+/* config table */
+table{width:100%; border-collapse:collapse; font-size:13.5px;}
+th{text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-soft); padding:8px 10px; border-bottom:2px solid var(--line); white-space:nowrap;}
+td{padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+td input[type=text], td input[type=number], td select{
+  border:1.5px solid var(--line); border-radius:7px; padding:6px 8px; font-size:13.5px; width:100%; font-family:inherit;
+}
+td input[type=checkbox]{width:17px; height:17px;}
+tr.excluded td{opacity:.42;}
+.calc-cell{font-weight:600; color:var(--navy-dark); font-variant-numeric:tabular-nums;}
+.hint{font-size:11.5px; color:var(--ink-soft);}
+
+.snapshot{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; background:var(--green-bg); border:1px solid #bfe6c6; border-radius:12px; padding:16px 18px; margin-bottom:22px;}
+.snap-item .k{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
+.snap-item .v{font-family:'Poppins'; font-weight:600; color:var(--navy-dark); font-size:15px;}
+
+.totals{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-top:18px;}
+.total-box{background:var(--bg); border-radius:12px; padding:16px 18px;}
+.total-box .k{font-size:12px; color:var(--ink-soft); display:flex; align-items:center;}
+.total-box .v{font-family:'Poppins'; font-size:22px; font-weight:600; color:var(--navy-dark);}
+.total-box.hero-total{background:var(--navy); color:var(--white);}
+.total-box.hero-total .k{color:#c9d6ef;}
+.total-box.hero-total .v{color:var(--white);}
+
+/* pricing options */
+.options-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; min-width:820px;}
+.scroll-x{overflow-x:auto; padding-bottom:6px;}
+.opt-col{border:2px solid var(--line); border-radius:14px; overflow:hidden; transition:border-color .15s, box-shadow .15s;}
+.opt-col.selected{border-color:var(--green); box-shadow:0 6px 18px rgba(55,178,77,0.18);}
+.opt-head{padding:14px 16px; background:var(--bg);}
+.opt-col.selected .opt-head{background:var(--green-bg);}
+.opt-head .lbl{font-family:'Poppins'; font-weight:600; font-size:14.5px; color:var(--navy-dark);}
+.opt-head .bucket{font-size:11px; color:var(--ink-soft); margin-top:2px;}
+.opt-body{padding:14px 16px; display:flex; flex-direction:column; gap:10px;}
+.opt-input{display:flex; flex-direction:column; gap:4px;}
+.opt-input label{font-size:11px; color:var(--ink-soft); font-weight:600; display:flex; align-items:center;}
+.opt-input .inputwrap{display:flex; align-items:center; border:1.5px solid var(--line); border-radius:8px; overflow:hidden;}
+.opt-input .inputwrap span{background:var(--bg); padding:8px 8px; font-size:12.5px; color:var(--ink-soft);}
+.opt-input input{border:none; padding:8px; font-size:13.5px; width:100%; font-family:inherit;}
+.opt-row{display:flex; justify-content:space-between; font-size:12.5px; padding:3px 0;}
+.opt-row .l{color:var(--ink-soft); display:flex; align-items:center;}
+.opt-row .v{font-weight:600; font-variant-numeric:tabular-nums;}
+.opt-row.big .v{font-family:'Poppins'; font-size:17px; color:var(--navy-dark);}
+.opt-section-lbl{font-size:10.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--navy); font-weight:700; margin-top:6px;}
+.select-btn{
+  margin-top:8px; width:100%; padding:9px; border-radius:999px; border:1.5px solid var(--navy);
+  background:var(--white); color:var(--navy-dark); font-weight:600; font-size:12.5px; cursor:pointer; transition:.15s;
+}
+.select-btn:hover{background:var(--navy); color:var(--white);}
+.opt-col.selected .select-btn{background:var(--green); border-color:var(--green); color:var(--white);}
+
+.suggest-banner{display:flex; align-items:center; justify-content:space-between; gap:14px; background:#fff7e8; border:1px solid #f2d38a; border-radius:12px; padding:12px 18px; margin-bottom:18px; font-size:13.5px; flex-wrap:wrap;}
+.suggest-banner button{background:var(--navy); color:#fff; border:none; padding:8px 16px; border-radius:999px; font-weight:600; font-size:12.5px; cursor:pointer;}
+
+.playground{background:var(--navy-dark); color:var(--white); border-radius:14px; padding:22px 24px; margin-top:24px;}
+.playground h3{color:#a9c2ee; margin-bottom:6px;}
+.playground .desc{color:#c9d6ef; font-size:13px; margin-bottom:18px;}
+.pg-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px;}
+.pg-field label{color:#c9d6ef; display:flex; align-items:center;}
+.pg-field .inputwrap{background:#1a2d55; border:1.5px solid #3c5590; border-radius:8px; display:flex; align-items:center; overflow:hidden;}
+.pg-field .inputwrap span{padding:9px 8px; color:#8fa8de; font-size:12.5px;}
+.pg-field input{background:transparent; border:none; color:#fff; padding:9px 8px; width:100%; font-family:inherit; font-size:13.5px;}
+.pg-out{background:#1a2d55; border-radius:12px; padding:16px 18px;}
+.pg-out .k{color:#8fa8de; font-size:11.5px;}
+.pg-out .v{font-family:'Poppins'; font-size:19px; font-weight:600;}
+.playground .help-btn{border-color:#5b7ab8; color:#c9d6ef; background:transparent;}
+
+/* proposal */
+.proposal-doc{border:1.5px solid var(--line); border-radius:14px; overflow:hidden;}
+.proposal-head{background:var(--navy); color:#fff; padding:26px 30px;}
+.proposal-head .k{color:#c9d6ef; font-size:12px; text-transform:uppercase; letter-spacing:.05em;}
+.proposal-head h2{color:#fff; margin:4px 0 0; font-size:24px;}
+.proposal-body{padding:26px 30px;}
+.p-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:14px;}
+.p-row .l{color:var(--ink-soft);}
+.p-row .v{font-weight:600;}
+.p-section{margin-bottom:22px;}
+.p-highlight{background:var(--green-bg); border:1px solid #bfe6c6; border-radius:12px; padding:18px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin:6px 0 22px;}
+.p-highlight .big{font-family:'Poppins'; font-size:26px; font-weight:700; color:var(--navy-dark);}
+.p-highlight .lbl{font-size:12px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
+
+.step-actions{display:flex; justify-content:space-between; margin-top:6px;}
+.btn-pill{padding:11px 24px; border-radius:999px; border:none; font-weight:600; font-size:13.5px; cursor:pointer;}
+.btn-primary{background:var(--navy); color:#fff;}
+.btn-primary:hover{background:var(--navy-dark);}
+.btn-ghost{background:transparent; color:var(--navy); border:1.5px solid var(--line);}
+.btn-ghost:hover{border-color:var(--navy);}
+
+footer{text-align:center; padding:30px; color:var(--ink-soft); font-size:12px;}
+
+/* proposal — elevated */
+.proposal-meta{display:flex; flex-wrap:wrap; border-bottom:1px solid var(--line); background:#f7fafc;}
+.proposal-meta > div{flex:1; min-width:150px; padding:14px 30px; border-right:1px solid var(--line);}
+.proposal-meta > div:last-child{border-right:none;}
+.proposal-meta .k{font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft);}
+.proposal-meta .v{font-weight:600; color:var(--navy-dark); font-size:13.5px; margin-top:2px;}
+
+.p-stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:1px; background:var(--line); border-radius:12px; overflow:hidden; margin-bottom:26px; border:1px solid var(--line);}
+.p-stat{background:#fff; padding:16px 18px;}
+.p-stat .k{font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em;}
+.p-stat .v{font-family:'Poppins'; font-size:19px; font-weight:600; color:var(--navy-dark); margin-top:3px;}
+
+.p-lead{font-size:15px; color:var(--ink); line-height:1.75; margin:0 0 28px;}
+
+.p-h{font-family:'Poppins'; font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--navy); margin:0 0 14px;}
+
+.p-included{list-style:none; margin:0 0 28px; padding:0; display:grid; gap:10px;}
+.p-included li{display:flex; gap:11px; align-items:flex-start; font-size:14px; color:var(--ink);}
+.p-included li .check{width:20px; height:20px; border-radius:50%; background:var(--green-bg); color:var(--green); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; margin-top:1px;}
+
+.p-quote{border-left:3px solid var(--blue); background:#f7fbff; padding:14px 18px; border-radius:0 10px 10px 0; font-size:13.5px; color:var(--ink); margin-bottom:28px; font-style:italic; line-height:1.6;}
+
+.p-econ-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:8px;}
+.p-econ-card{background:var(--bg); border-radius:10px; padding:14px 16px;}
+.p-econ-card .k{font-size:11px; color:var(--ink-soft);}
+.p-econ-card .v{font-family:'Poppins'; font-size:17px; font-weight:600; color:var(--navy-dark);}
+
+.proposal-foot{padding:16px 30px; border-top:1px solid var(--line); display:flex; justify-content:space-between; font-size:11.5px; color:var(--ink-soft); flex-wrap:wrap; gap:8px; background:#fbfdfe;}
+
+@media print{
+  @page{ margin: 0.7in; }
+  html, body{background:#fff !important; font-size:12px;}
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  *{-webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;}
+  .topbar, .hero, .wave, .stepnav, .step-actions, .explainer, .tipbox{display:none !important;}
+  main{margin:0; max-width:100%; padding:0;}
+  .card{box-shadow:none; padding:0; margin-bottom:0;}
+  .card > h2, .card > .desc{display:none;}
+  .proposal-doc{border:1px solid var(--line); border-radius:8px; overflow:visible; break-inside:avoid; page-break-inside:avoid; margin:0.3in 3px 2px 1px;}
+
+  /* header no longer depends on the navy fill printing — text carries its own color */
+  .proposal-head{padding:20px 26px; overflow:visible; break-inside:avoid; page-break-inside:avoid; background:transparent !important; border-bottom:2px solid var(--navy);}
+  .proposal-head .k{font-size:11px; color:var(--navy) !important;}
+  .proposal-head h2{font-size:19px; margin-top:3px; color:var(--navy-dark) !important;}
+  .proposal-head > div:last-child{font-size:13.5px !important; margin-top:4px !important; color:var(--ink-soft) !important;}
+
+  .proposal-meta > div{padding:12px 18px;}
+  .proposal-meta .k{font-size:10px;}
+  .proposal-meta .v{font-size:13px;}
+
+  .proposal-body{padding:20px 26px;}
+
+  .p-lead{font-size:13px; line-height:1.55; margin-bottom:18px;}
+
+  .p-h{font-size:12px; margin-bottom:12px;}
+
+  .p-stats{margin-bottom:18px;}
+  .p-stat{padding:12px 14px;}
+  .p-stat .k{font-size:10.5px;}
+  .p-stat .v{font-size:17px; margin-top:2px;}
+
+  .p-included{margin-bottom:20px; columns:2; column-gap:26px; display:block;}
+  .p-included li{break-inside: avoid; page-break-inside: avoid; margin-bottom:8px; font-size:12px; gap:8px;}
+  .p-included li .check{width:17px; height:17px; font-size:10px; margin-top:0;}
+
+  .p-quote{padding:13px 18px; font-size:12px; margin-bottom:18px; line-height:1.5;}
+
+  .p-highlight{padding:16px 20px; margin:6px 0 18px;}
+  .p-highlight .lbl{font-size:11px;}
+  .p-highlight .big{font-size:23px;}
+
+  .p-econ-grid{gap:12px; margin-bottom:6px;}
+  .p-econ-card{padding:12px 16px;}
+  .p-econ-card .k{font-size:10.5px;}
+  .p-econ-card .v{font-size:16px;}
+
+  .proposal-foot{padding:12px 26px; font-size:10.5px;}
+
+  .proposal-meta, .p-stats, .p-quote, .p-highlight, .p-econ-grid, .p-h,
+  .proposal-meta > div, .p-stat, .p-econ-card{
+    break-inside: avoid; page-break-inside: avoid;
+  }
+  .p-h{break-after: avoid; page-break-after: avoid;}
+  .proposal-foot{break-inside: avoid; page-break-inside: avoid;}
+}
+
+
+@media(max-width:760px){
+  .stepnav{display:none;}
+  .hero h1{font-size:20px;}
+  main{margin-top:-20px;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="sub">Program Pricing &amp; Proposal Tool</div>
+  </div>
+  <nav class="stepnav" id="stepnav"></nav>
+</header>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>Discovery to proposal, in one flow</h1>
+    <p>Capture the reseller conversation, configure the delivery, compare pricing options in real time, and hand off a clean proposal — all from one place.</p>
+  </div>
+</div>
+<svg class="wave" viewBox="0 0 1440 60" preserveAspectRatio="none"><path d="M0,20 C360,60 1080,-10 1440,25 L1440,60 L0,60 Z" fill="#ecf4f6"/></svg>
+
+<main>
+  <!-- STEP 1: DISCOVERY -->
+  <section class="panel active" id="panel-1">
+    <div class="card">
+      <h2>1. Discovery Intake</h2>
+      <p class="desc">Use this during or immediately after the reseller conversation. Capture what's needed to configure the first estimate.</p>
+
+      <div class="explainer" id="exp-1">
+        <button class="explainer-toggle" type="button" onclick="toggleExplainer(1)">ℹ️ What is this step? <span class="chev">▾</span></button>
+        <div class="explainer-body">This captures what you learned talking to the reseller — who they are, how big the program is, and what they need. Everything you enter here feeds the cost and pricing calculations in the next two steps, so it's worth getting the participant count, duration, and hours right before moving on.</div>
+      </div>
+
+      <h3>Reseller &amp; Program</h3>
+      <div class="grid">
+        <div class="field"><label for="d-reseller">Reseller / Organization Name</label><input id="d-reseller" type="text" value="The Ascent Collective"></div>
+        <div class="field"><label for="d-program">Program Name</label><input id="d-program" type="text" value="Vanguard Rising Cohort"></div>
+        <div class="field"><label for="d-contact">Primary Reseller Contact</label><input id="d-contact" type="text" value="Jordan Vance" placeholder="Full name"></div>
+        <div class="field"><label for="d-contactemail">Contact Email</label><input id="d-contactemail" type="text" value="jordan@ascentcollective.org" placeholder="name@organization.com"></div>
+        <div class="field"><label for="d-orgtype">Organization Type <button type="button" class="help-btn" data-tip="orgtype" aria-label="More info" aria-expanded="false">?</button></label>
+          <select id="d-orgtype">
+            <option value="Nonprofit">Nonprofit / Mission-aligned</option>
+            <option value="For-Profit" selected>For-Profit</option>
+            <option value="High-Resource">High-Resource / Institutional</option>
+          </select>
+        </div>
+        <div class="field"><label for="d-format">Delivery Format</label>
+          <select id="d-format"><option>Virtual</option><option>In-Person</option><option>Hybrid</option></select>
+        </div>
+        <div class="field"><label for="d-duration">Program Duration (weeks) <button type="button" class="help-btn" data-tip="duration" aria-label="More info" aria-expanded="false">?</button></label><input id="d-duration" type="number" min="1" step="1" value="6"></div>
+        <div class="field"><label for="d-participants">Participants per Cohort <button type="button" class="help-btn" data-tip="participants" aria-label="More info" aria-expanded="false">?</button></label><input id="d-participants" type="number" min="1" step="1" value="4"></div>
+        <div class="field"><label for="d-teams">Number of Teams <button type="button" class="help-btn" data-tip="teams" aria-label="More info" aria-expanded="false">?</button></label><input id="d-teams" type="number" min="1" step="1" value="1"></div>
+        <div class="field"><label for="d-cohorts">Expected Number of Cohorts <button type="button" class="help-btn" data-tip="cohorts" aria-label="More info" aria-expanded="false">?</button></label><input id="d-cohorts" type="number" min="1" step="1" value="1"></div>
+      </div>
+
+      <div class="divider"></div>
+      <h3>Program Requirements</h3>
+      <div class="grid">
+        <div class="field"><label for="d-basecerts">Base Certifications Included</label><input id="d-basecerts" type="number" min="0" step="1" value="2"></div>
+        <div class="field"><label for="d-addlcerts">Additional Certifications Requested</label><input id="d-addlcerts" type="number" min="0" step="1" value="0"></div>
+        <div class="field"><label for="d-accred">Accreditation / External Credit Requirement?</label>
+          <select id="d-accred"><option>No</option><option>Yes</option></select>
+        </div>
+        <div class="field"><label for="d-coaching">Required Coaching Hours <button type="button" class="help-btn" data-tip="coaching" aria-label="More info" aria-expanded="false">?</button></label><input id="d-coaching" type="number" min="0" step="0.5" value="6"></div>
+        <div class="field"><label for="d-pm">Required Product / Portfolio Mgmt Hours <button type="button" class="help-btn" data-tip="pm" aria-label="More info" aria-expanded="false">?</button></label><input id="d-pm" type="number" min="0" step="0.5" value="4"></div>
+        <div class="field"><label for="d-staff">Additional Staff / Support Hours</label><input id="d-staff" type="number" min="0" step="0.5" value="1"></div>
+      </div>
+
+      <div class="divider"></div>
+      <h3>Proposal Details</h3>
+      <div class="grid">
+        <div class="field"><label for="d-propnum">Proposal Number</label><input id="d-propnum" type="text" placeholder="e.g. LFL-2026-014"></div>
+        <div class="field"><label for="d-propdate">Proposal Date</label><input id="d-propdate" type="date"></div>
+        <div class="field"><label for="d-propvalid">Valid For (days)</label><input id="d-propvalid" type="number" min="0" step="1" placeholder="e.g. 30"></div>
+      </div>
+
+      <div class="divider"></div>
+      <h3>Discovery Notes</h3>
+      <div class="grid" style="grid-template-columns:1fr;">
+        <div class="field"><label for="d-outcome">Desired participant outcome</label><textarea id="d-outcome">Real-world experience, professional certifications, and a portfolio-ready work product.</textarea></div>
+        <div class="field"><label for="d-special">Special requirements or support needs</label><textarea id="d-special">None identified in the initial conversation.</textarea></div>
+        <div class="field"><label for="d-notes">General discovery notes</label><textarea id="d-notes" placeholder="Context that may affect design even if it doesn't change a formula..."></textarea></div>
+      </div>
+
+      <div class="step-actions" style="margin-top:22px;">
+        <span></span>
+        <button class="btn-pill btn-primary" onclick="goStep(2)">Continue to Configuration →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: CONFIGURATION -->
+  <section class="panel" id="panel-2">
+    <div class="card">
+      <h2>2. Program Configuration</h2>
+      <p class="desc">Confirm what LEAF Lab must provide, then adjust quantities and current costs. Totals recalculate live.</p>
+
+      <div class="explainer" id="exp-2">
+        <button class="explainer-toggle" type="button" onclick="toggleExplainer(2)">ℹ️ What is this step? <span class="chev">▾</span></button>
+        <div class="explainer-body">This turns the reseller's needs into real delivery costs. Toggle components on or off, adjust quantities or unit costs, and every total below updates instantly. Nothing here adds margin yet — this page is pure cost, the same number no matter who the reseller is.</div>
+      </div>
+
+      <div class="snapshot" id="snapshot"></div>
+
+      <div class="legend">
+        <span><span class="swatch sw-blue"></span>Enter / adjust</span>
+        <span><span class="swatch sw-green"></span>Pulled from Discovery</span>
+        <span><span class="swatch sw-white"></span>Calculated</span>
+      </div>
+
+      <h3>Program Components &amp; Costs</h3>
+      <div class="scroll-x">
+      <table style="min-width:760px;">
+        <thead><tr>
+          <th style="width:22%">Component</th>
+          <th style="width:16%">Cost basis <button type="button" class="help-btn" data-tip="basis" aria-label="More info" aria-expanded="false">?</button></th>
+          <th>Included</th>
+          <th>Qty</th>
+          <th>Unit cost</th>
+          <th>Calculated cost</th>
+          <th style="width:26%">Guidance</th>
+        </tr></thead>
+        <tbody id="comp-body"></tbody>
+      </table>
+      </div>
+
+      <div class="totals">
+        <div class="total-box"><div class="k">Per-participant cost (per unit) <button type="button" class="help-btn" data-tip="pp-total" aria-label="More info" aria-expanded="false">?</button></div><div class="v" id="t-pp">—</div></div>
+        <div class="total-box"><div class="k">Per-cohort / shared cost <button type="button" class="help-btn" data-tip="shared-total" aria-label="More info" aria-expanded="false">?</button></div><div class="v" id="t-shared">—</div></div>
+        <div class="total-box hero-total"><div class="k">Total delivery cost</div><div class="v" id="t-total">—</div></div>
+        <div class="total-box"><div class="k">Total cost per participant</div><div class="v" id="t-perpart">—</div></div>
+      </div>
+
+      <div class="step-actions" style="margin-top:22px;">
+        <button class="btn-pill btn-ghost" onclick="goStep(1)">← Back</button>
+        <button class="btn-pill btn-primary" onclick="goStep(3)">Continue to Pricing →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3: PRICING -->
+  <section class="panel" id="panel-3">
+    <div class="card">
+      <h2>3. Pricing Engine</h2>
+      <p class="desc">Compare four pricing views side by side. Options A–C are demonstration scenarios; Option D is fully custom. Select one to carry into the proposal.</p>
+
+      <div class="explainer" id="exp-3">
+        <button class="explainer-toggle" type="button" onclick="toggleExplainer(3)">ℹ️ What is this step? <span class="chev">▾</span></button>
+        <div class="explainer-body">Compare four ways to price this program side by side. LEAF Lab's economics show what you earn — or intentionally subsidize; the reseller's economics show what they'd keep after paying LEAF Lab. Pick one to carry into the proposal, or use the Scenario Playground below to work backward from a retail price the reseller already has in mind.</div>
+      </div>
+
+      <div class="suggest-banner">
+        <span>Based on organization type (<strong id="suggest-orgtype">For-Profit</strong>), the suggested starting point is <strong id="suggest-label">Option B — For-Profit</strong>.</span>
+        <button type="button" onclick="selectSuggested()">Use suggested option</button>
+      </div>
+
+      <div class="scroll-x">
+        <div class="options-grid" id="options-grid"></div>
+      </div>
+
+      <div class="playground">
+        <h3>Scenario Playground</h3>
+        <p class="desc">Reverse-engineer from a target retail price. See the maximum wholesale price available to LEAF Lab while preserving the reseller's desired margin.</p>
+        <div class="pg-grid">
+          <div class="pg-field field">
+            <label for="pg-retail">Target reseller retail price / participant <button type="button" class="help-btn" data-tip="pg-retail" aria-label="More info" aria-expanded="false">?</button></label>
+            <div class="inputwrap"><span>$</span><input id="pg-retail" type="number" step="any" inputmode="decimal" value="700"></div>
+          </div>
+          <div class="pg-field field">
+            <label for="pg-margin">Desired reseller gross margin <button type="button" class="help-btn" data-tip="pg-margin" aria-label="More info" aria-expanded="false">?</button></label>
+            <div class="inputwrap"><input id="pg-margin" type="number" step="any" inputmode="decimal" value="20"><span>%</span></div>
+          </div>
+          <div class="pg-out"><div class="k">Max wholesale / participant</div><div class="v" id="pg-wpp">—</div></div>
+          <div class="pg-out"><div class="k">Max wholesale / cohort</div><div class="v" id="pg-wpc">—</div></div>
+          <div class="pg-out"><div class="k">LEAF Lab profit / (subsidy)</div><div class="v" id="pg-profit">—</div></div>
+          <div class="pg-out"><div class="k">LEAF Lab margin at this price</div><div class="v" id="pg-marginout">—</div></div>
+        </div>
+      </div>
+
+      <div class="step-actions" style="margin-top:22px;">
+        <button class="btn-pill btn-ghost" onclick="goStep(2)">← Back</button>
+        <button class="btn-pill btn-primary" onclick="goStep(4)">Continue to Proposal →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4: PROPOSAL -->
+  <section class="panel" id="panel-4">
+    <div class="card">
+      <h2>4. Proposal Summary</h2>
+      <p class="desc">A clean, client-ready read of the finalized configuration and selected pricing.</p>
+
+      <div class="explainer" id="exp-4">
+        <button class="explainer-toggle" type="button" onclick="toggleExplainer(4)">ℹ️ What is this step? <span class="chev">▾</span></button>
+        <div class="explainer-body">A polished summary of the configuration and pricing you selected in the previous step — ready to print or send as-is. It shows the reseller's retail price, total program price, and their gross profit, without naming which internal pricing category (nonprofit, for-profit, high-resource) the number came from. Nothing here is editable — go back to Discovery, Configuration, or Pricing to change a number.</div>
+      </div>
+
+      <div class="proposal-doc">
+        <div class="proposal-head">
+          <div class="k">Program Proposal</div>
+          <h2 id="pr-program">Vanguard Rising Cohort</h2>
+          <div style="margin-top:6px; color:#dbe6fa; font-size:14px;" id="pr-reseller">Prepared for The Ascent Collective</div>
+        </div>
+        <div class="proposal-meta">
+          <div><div class="k">Proposal No.</div><div class="v" id="pr-meta-number">—</div></div>
+          <div><div class="k">Prepared on</div><div class="v" id="pr-meta-date">—</div></div>
+          <div><div class="k">Valid through</div><div class="v" id="pr-meta-valid">—</div></div>
+          <div><div class="k">Contact</div><div class="v" id="pr-meta-contact">—</div></div>
+        </div>
+        <div class="proposal-body">
+
+          <p class="p-lead" id="pr-lead">—</p>
+
+          <div class="p-stats">
+            <div class="p-stat"><div class="k">Duration</div><div class="v" id="pr-duration">—</div></div>
+            <div class="p-stat"><div class="k">Participants</div><div class="v" id="pr-participants">—</div></div>
+            <div class="p-stat"><div class="k">Teams</div><div class="v" id="pr-teams">—</div></div>
+            <div class="p-stat"><div class="k">Format</div><div class="v" id="pr-format">—</div></div>
+          </div>
+
+          <div class="p-h">What's included</div>
+          <ul class="p-included" id="pr-included"></ul>
+
+          <div class="p-quote" id="pr-outcome-quote">—</div>
+
+          <div class="p-highlight" style="justify-content:center; text-align:center;">
+            <div><div class="lbl">Total Program Investment</div><div class="big" id="pr-cohortprice">—</div></div>
+          </div>
+
+          <div class="p-h">Financial summary</div>
+          <div class="p-econ-grid">
+            <div class="p-econ-card"><div class="k">Price / participant</div><div class="v" id="pr-retail">—</div></div>
+            <div class="p-econ-card"><div class="k">Reseller gross profit / cohort</div><div class="v" id="pr-rgp">—</div></div>
+          </div>
+
+        </div>
+        <div class="proposal-foot">
+          <span>L-EAF Lab · www.l-eaflab.org</span>
+          <span id="pr-foot-number">—</span>
+        </div>
+      </div>
+
+      <div class="step-actions" style="margin-top:22px;">
+        <button class="btn-pill btn-ghost" onclick="goStep(3)">← Back to Pricing</button>
+        <button class="btn-pill btn-primary" onclick="window.print()">Print / Save as PDF</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="tipbox" id="tipbox" role="tooltip"></div>
+
+<script>
+/* ---------------- tooltip content ---------------- */
+const tips = {
+  'orgtype':'Used to suggest a starting pricing option (Nonprofit/Mission, For-Profit, or High-Resource) on the Pricing step. It does not change any cost by itself.',
+  'duration':'Total program length in weeks. Longer programs push monthly-billed licenses (like KanbanZone or SOLO) into another billing month — those round up, they don\'t prorate.',
+  'participants':'Number of people going through this cohort. Drives every per-participant cost and the per-participant pricing shown later.',
+  'teams':'Number of teams running concurrently. Drives per-team costs, like shared Zoom licensing.',
+  'cohorts':'How many times you expect to run this program. This is informational for forecasting — the calculator prices a single cohort at a time.',
+  'coaching':'Total coaching hours for the whole cohort, as discussed in discovery. Not automatically inferred from duration alone — some programs need more hours per week than others.',
+  'pm':'Ongoing product / portfolio management support hours for the cohort, separate from coaching.',
+  'basis':'How a cost is calculated — per participant, per participant per month, per team per month, per cohort per hour, per cohort flat, or a flat program cost.',
+  'pp-total':'The sum of all "per participant" cost components, shown as a per-participant rate (before multiplying by how many participants are in the cohort).',
+  'shared-total':'The sum of all team-, cohort-, and flat-level costs — these don\'t change based on how many participants are in the cohort.',
+  'opt-margin':'The percentage LEAF Lab adds on top of the delivery cost to reach the wholesale price it charges the reseller. 0% means charging exactly at cost.',
+  'opt-retail':'What the reseller plans to charge per participant. This is only used to show reseller economics on this page — it does not change LEAF Lab\'s wholesale price.',
+  'pg-retail':'A market or per-participant price the reseller already has in mind — the number you\'re working backward from.',
+  'pg-margin':'The gross margin the reseller wants to keep for themselves after paying LEAF Lab. The playground solves for the most LEAF Lab could charge while still leaving the reseller this margin.',
+};
+
+document.addEventListener('click', e=>{
+  const btn = e.target.closest('.help-btn');
+  const tipbox = document.getElementById('tipbox');
+  if(btn){
+    e.preventDefault();
+    const key = btn.dataset.tip;
+    const wasOpenForThis = tipbox.classList.contains('show') && tipbox.dataset.for===key;
+    document.querySelectorAll('.help-btn[aria-expanded="true"]').forEach(b=>b.setAttribute('aria-expanded','false'));
+    if(wasOpenForThis){
+      tipbox.classList.remove('show');
+      return;
+    }
+    tipbox.textContent = tips[key] || 'More information coming soon.';
+    tipbox.dataset.for = key;
+    tipbox.classList.add('show');
+    tipbox.style.left = '0px'; tipbox.style.top = '0px';
+    const r = btn.getBoundingClientRect();
+    const tw = tipbox.offsetWidth, th = tipbox.offsetHeight;
+    let left = r.left;
+    let top = r.bottom + 8;
+    if(left + tw > window.innerWidth - 12) left = window.innerWidth - tw - 12;
+    if(top + th > window.innerHeight - 12) top = r.top - th - 8;
+    tipbox.style.left = Math.max(12,left)+'px';
+    tipbox.style.top = Math.max(12,top)+'px';
+    btn.setAttribute('aria-expanded','true');
+    return;
+  }
+  if(!e.target.closest('.tipbox')){
+    tipbox.classList.remove('show');
+    document.querySelectorAll('.help-btn[aria-expanded="true"]').forEach(b=>b.setAttribute('aria-expanded','false'));
+  }
+});
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    document.getElementById('tipbox').classList.remove('show');
+    document.querySelectorAll('.help-btn[aria-expanded="true"]').forEach(b=>b.setAttribute('aria-expanded','false'));
+  }
+});
+
+function toggleExplainer(n){
+  document.getElementById('exp-'+n).classList.toggle('open');
+}
+
+/* ---------------- state ---------------- */
+const steps = [
+  {n:1, label:'Discovery'},
+  {n:2, label:'Configuration'},
+  {n:3, label:'Pricing'},
+  {n:4, label:'Proposal'},
+];
+let currentStep = 1;
+
+const basisLabels = {
+  'participant':'Per participant',
+  'participant-month':'Per participant / month',
+  'team-month':'Per team / month',
+  'cohort-hour':'Per cohort / hour',
+  'cohort':'Per cohort',
+  'flat':'Flat program cost',
+};
+
+let components = [
+  {name:'Certifications', basis:'participant', included:true, qty:2, unitCost:65, hint:'Total certifications across all participants', locked:true},
+  {name:'KanbanZone license', basis:'participant-month', included:true, qty:2, unitCost:7, hint:'Months are rounded up; vendor costs may not prorate', locked:true},
+  {name:'SOLO / standard platform', basis:'participant-month', included:true, qty:2, unitCost:15, hint:'Editable demonstration rate', locked:true},
+  {name:'Zoom allocation', basis:'team-month', included:true, qty:2, unitCost:7.5, hint:'Adjust if simultaneous-team licensing differs', locked:true},
+  {name:'Coaching', basis:'cohort-hour', included:true, qty:6, unitCost:70, hint:'Hours come from discovery; do not infer only from duration', locked:true},
+  {name:'Product / portfolio management', basis:'cohort-hour', included:true, qty:4, unitCost:50, hint:'Ongoing support distinct from coaching', locked:true},
+  {name:'Administrative support', basis:'cohort-hour', included:true, qty:1, unitCost:90, hint:'Back-office or coordination support', locked:true},
+  {name:'Additional Program Component 1', basis:'participant', included:false, qty:0, unitCost:0, hint:'Rename and select the appropriate cost basis', locked:false},
+  {name:'Additional Program Component 2', basis:'cohort', included:false, qty:0, unitCost:0, hint:'Rename and select the appropriate cost basis', locked:false},
+  {name:'Additional Program Component 3', basis:'flat', included:false, qty:0, unitCost:0, hint:'Rename and select the appropriate cost basis', locked:false},
+];
+
+let pricingOptions = {
+  A:{label:'Nonprofit / Mission', margin:0,    retail:550},
+  B:{label:'For-Profit',          margin:0.25, retail:650},
+  C:{label:'High-Resource',       margin:0.4,  retail:850},
+  D:{label:'Custom',              margin:0.2,  retail:700},
+};
+let selectedOption = 'B';
+const orgTypeToOption = {'Nonprofit':'A','For-Profit':'B','High-Resource':'C'};
+
+/* ---------------- helpers ---------------- */
+const $ = id => document.getElementById(id);
+const fmt = n => isFinite(n) ? n.toLocaleString('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}) : '$0.00';
+const pct = n => isFinite(n) ? (n*100).toFixed(1)+'%' : '0.0%';
+
+function getDiscovery(){
+  return {
+    reseller: $('d-reseller').value || 'Untitled Reseller',
+    program: $('d-program').value || 'Untitled Program',
+    contact: $('d-contact').value || '',
+    contactEmail: $('d-contactemail').value || '',
+    propNumber: $('d-propnum').value || '',
+    propDate: $('d-propdate').value || '',
+    propValid: parseFloat($('d-propvalid').value) || 0,
+    orgType: $('d-orgtype').value,
+    format: $('d-format').value,
+    duration: parseFloat($('d-duration').value)||0,
+    participants: Math.max(1, parseFloat($('d-participants').value)||1),
+    teams: Math.max(1, parseFloat($('d-teams').value)||1),
+    cohorts: Math.max(1, parseFloat($('d-cohorts').value)||1),
+    baseCerts: parseFloat($('d-basecerts').value)||0,
+    addlCerts: parseFloat($('d-addlcerts').value)||0,
+    accred: $('d-accred').value,
+    coaching: parseFloat($('d-coaching').value)||0,
+    pm: parseFloat($('d-pm').value)||0,
+    staff: parseFloat($('d-staff').value)||0,
+    outcome: $('d-outcome').value,
+    special: $('d-special').value,
+  };
+}
+
+function basisMultiplier(basis, ctx){
+  if(basis==='participant' || basis==='participant-month') return ctx.participants;
+  if(basis==='team-month') return ctx.teams;
+  return 1;
+}
+
+function calcComponents(ctx){
+  let perParticipantTotal = 0, sharedTotal = 0;
+  const rows = components.map(c=>{
+    const cost = c.included ? (c.qty * c.unitCost * basisMultiplier(c.basis, ctx)) : 0;
+    if(c.basis==='participant' || c.basis==='participant-month') perParticipantTotal += cost;
+    else sharedTotal += cost;
+    return {...c, cost};
+  });
+  const perParticipantUnit = ctx.participants ? perParticipantTotal/ctx.participants : 0;
+  const total = perParticipantTotal + sharedTotal;
+  return {rows, perParticipantUnit, sharedTotal, total, perParticipant: ctx.participants ? total/ctx.participants : 0};
+}
+
+function bucketFor(wpp){
+  if(wpp<=450) return 'Up to $450';
+  if(wpp<=600) return '$451–$600';
+  if(wpp<=950) return '$601–$950';
+  return '$950+';
+}
+
+function calcOption(key, totalCost, participants){
+  const o = pricingOptions[key];
+  const wholesalePerCohort = o.margin<1 ? totalCost/(1-o.margin) : totalCost;
+  const wholesalePerParticipant = participants ? wholesalePerCohort/participants : 0;
+  const profit = wholesalePerCohort - totalCost;
+  const marginActual = wholesalePerCohort ? profit/wholesalePerCohort : 0;
+  const grossRevenue = o.retail * participants;
+  const gp = grossRevenue - wholesalePerCohort;
+  const gm = grossRevenue ? gp/grossRevenue : 0;
+  return {...o, wholesalePerCohort, wholesalePerParticipant, profit, marginActual, bucket: bucketFor(wholesalePerParticipant), grossRevenue, gp, gm};
+}
+
+/* ---------------- one-time DOM build ---------------- */
+function renderStepNav(){
+  const nav = $('stepnav');
+  nav.innerHTML = '';
+  steps.forEach(s=>{
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = (s.n===currentStep?'active ':'') + (s.n<currentStep?'done ':'');
+    b.innerHTML = `<span class="dot">${s.n<currentStep?'✓':s.n}</span> ${s.label}`;
+    b.onclick = ()=>goStep(s.n);
+    nav.appendChild(b);
+  });
+}
+
+function goStep(n){
+  currentStep = n;
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  $('panel-'+n).classList.add('active');
+  renderStepNav();
+  updateDerived();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function buildComponentsTable(){
+  const body = $('comp-body');
+  body.innerHTML = '';
+  components.forEach((c, i)=>{
+    const tr = document.createElement('tr');
+    tr.id = 'comp-row-'+i;
+    if(!c.included) tr.className='excluded';
+    tr.innerHTML = `
+      <td>${c.locked ? c.name : `<input type="text" value="${c.name}" data-i="${i}" data-f="name">`}</td>
+      <td>
+        <select data-i="${i}" data-f="basis">
+          ${Object.entries(basisLabels).map(([k,l])=>`<option value="${k}" ${c.basis===k?'selected':''}>${l}</option>`).join('')}
+        </select>
+      </td>
+      <td style="text-align:center;"><input type="checkbox" ${c.included?'checked':''} data-i="${i}" data-f="included"></td>
+      <td><input type="number" value="${c.qty}" min="0" step="any" inputmode="decimal" data-i="${i}" data-f="qty" style="width:72px;"></td>
+      <td><input type="number" value="${c.unitCost}" min="0" step="any" inputmode="decimal" data-i="${i}" data-f="unitCost" style="width:84px;"></td>
+      <td class="calc-cell" id="calc-${i}">—</td>
+      <td class="hint">${c.hint}</td>
+    `;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', onComponentEdit);
+    el.addEventListener('change', onComponentEdit);
+  });
+}
+
+function onComponentEdit(e){
+  const i = parseInt(e.target.dataset.i);
+  const f = e.target.dataset.f;
+  let v = e.target.value;
+  if(f==='included') v = e.target.checked;
+  else if(f==='qty' || f==='unitCost') v = parseFloat(v);
+  components[i][f] = (f==='qty'||f==='unitCost') ? (isNaN(v)?0:v) : v;
+  if(f==='included'){
+    document.getElementById('comp-row-'+i).classList.toggle('excluded', !components[i].included);
+  }
+  updateDerived();
+}
+
+function buildOptionsGrid(){
+  const grid = $('options-grid');
+  grid.innerHTML = '';
+  Object.keys(pricingOptions).forEach(key=>{
+    const o = pricingOptions[key];
+    const col = document.createElement('div');
+    col.className = 'opt-col';
+    col.dataset.col = key;
+    col.innerHTML = `
+      <div class="opt-head">
+        <div class="lbl">Option ${key} — ${o.label}</div>
+        <div class="bucket" id="opt-bucket-${key}">Suggested bucket: —</div>
+      </div>
+      <div class="opt-body">
+        <div class="opt-input">
+          <label>Target LEAF Lab margin <button type="button" class="help-btn" data-tip="opt-margin" aria-label="More info" aria-expanded="false">?</button></label>
+          <div class="inputwrap"><input type="number" step="any" inputmode="decimal" value="${(o.margin*100)}" data-opt="${key}" data-f="margin"><span>%</span></div>
+        </div>
+        <div class="opt-input">
+          <label>Reseller retail price / participant <button type="button" class="help-btn" data-tip="opt-retail" aria-label="More info" aria-expanded="false">?</button></label>
+          <div class="inputwrap"><span>$</span><input type="number" step="any" inputmode="decimal" value="${o.retail}" data-opt="${key}" data-f="retail"></div>
+        </div>
+
+        <div class="opt-section-lbl">LEAF Lab economics</div>
+        <div class="opt-row"><span class="l">Wholesale / participant</span><span class="v" id="opt-wpp-${key}">—</span></div>
+        <div class="opt-row big"><span class="l">Wholesale / cohort</span><span class="v" id="opt-wpc-${key}">—</span></div>
+        <div class="opt-row"><span class="l">Profit / (subsidy)</span><span class="v" id="opt-profit-${key}">—</span></div>
+        <div class="opt-row"><span class="l">Margin</span><span class="v" id="opt-marginact-${key}">—</span></div>
+
+        <div class="opt-section-lbl">Reseller economics</div>
+        <div class="opt-row"><span class="l">Gross revenue / cohort</span><span class="v" id="opt-grossrev-${key}">—</span></div>
+        <div class="opt-row"><span class="l">Gross profit / cohort</span><span class="v" id="opt-gp-${key}">—</span></div>
+        <div class="opt-row"><span class="l">Gross margin</span><span class="v" id="opt-gm-${key}">—</span></div>
+
+        <button type="button" class="select-btn" data-select="${key}">Select for proposal</button>
+      </div>
+    `;
+    grid.appendChild(col);
+  });
+  grid.querySelectorAll('input').forEach(el=>{
+    el.addEventListener('input', e=>{
+      const key = e.target.dataset.opt, f = e.target.dataset.f;
+      let v = parseFloat(e.target.value);
+      if(isNaN(v)) v = 0;
+      pricingOptions[key][f] = f==='margin' ? v/100 : v;
+      updateDerived();
+    });
+  });
+  grid.querySelectorAll('[data-select]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ selectedOption = btn.dataset.select; updateDerived(); });
+  });
+}
+
+/* ---------------- proposal helpers ---------------- */
+function proposalMeta(d){
+  const dateFmt = iso => {
+    if(!iso) return null;
+    const dt = new Date(iso + 'T00:00:00');
+    return isNaN(dt) ? null : dt.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  };
+  let validThrough = null;
+  if(d.propDate && d.propValid){
+    const start = new Date(d.propDate + 'T00:00:00');
+    if(!isNaN(start)){
+      const vt = new Date(start.getTime() + d.propValid*24*60*60*1000);
+      validThrough = vt.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    }
+  }
+  return {
+    number: d.propNumber || '—',
+    preparedOn: dateFmt(d.propDate) || '—',
+    validThrough: validThrough || '—',
+  };
+}
+
+function includedLine(row){
+  if(row.basis==='participant') return `${row.qty} × ${row.name} per participant`;
+  if(row.basis==='participant-month' || row.basis==='team-month') return `${row.name} — included for the full program duration`;
+  if(row.basis==='cohort-hour') return `${row.name} — ${row.qty} hours for the cohort`;
+  return `${row.name} — included`;
+}
+
+/* ---------------- lightweight update (safe to run every keystroke) ---------------- */
+function updateDerived(){
+  const d = getDiscovery();
+  const ctx = {participants:d.participants, teams:d.teams};
+  const calc = calcComponents(ctx);
+
+  $('snapshot').innerHTML = `
+    <div class="snap-item"><div class="k">Reseller</div><div class="v">${d.reseller}</div></div>
+    <div class="snap-item"><div class="k">Program</div><div class="v">${d.program}</div></div>
+    <div class="snap-item"><div class="k">Duration</div><div class="v">${d.duration} wks</div></div>
+    <div class="snap-item"><div class="k">Participants</div><div class="v">${d.participants}</div></div>
+    <div class="snap-item"><div class="k">Teams</div><div class="v">${d.teams}</div></div>
+    <div class="snap-item"><div class="k">Delivery</div><div class="v">${d.format}</div></div>
+  `;
+
+  calc.rows.forEach((r,i)=>{ const el = $('calc-'+i); if(el) el.textContent = fmt(r.cost); });
+  $('t-pp').textContent = fmt(calc.perParticipantUnit);
+  $('t-shared').textContent = fmt(calc.sharedTotal);
+  $('t-total').textContent = fmt(calc.total);
+  $('t-perpart').textContent = fmt(calc.perParticipant);
+
+  const suggested = orgTypeToOption[d.orgType] || 'D';
+  $('suggest-orgtype').textContent = d.orgType;
+  $('suggest-label').textContent = `Option ${suggested} — ${pricingOptions[suggested].label}`;
+
+  Object.keys(pricingOptions).forEach(key=>{
+    const o = calcOption(key, calc.total, d.participants);
+    $('opt-bucket-'+key).textContent = 'Suggested bucket: ' + o.bucket;
+    $('opt-wpp-'+key).textContent = fmt(o.wholesalePerParticipant);
+    $('opt-wpc-'+key).textContent = fmt(o.wholesalePerCohort);
+    $('opt-profit-'+key).textContent = fmt(o.profit);
+    $('opt-marginact-'+key).textContent = pct(o.marginActual);
+    $('opt-grossrev-'+key).textContent = fmt(o.grossRevenue);
+    $('opt-gp-'+key).textContent = fmt(o.gp);
+    $('opt-gm-'+key).textContent = pct(o.gm);
+
+    const col = document.querySelector(`.opt-col[data-col="${key}"]`);
+    const isSel = key===selectedOption;
+    col.classList.toggle('selected', isSel);
+    col.querySelector('.select-btn').textContent = isSel ? '✓ Selected for proposal' : 'Select for proposal';
+  });
+
+  const pgRetail = parseFloat($('pg-retail').value)||0;
+  const pgMargin = (parseFloat($('pg-margin').value)||0)/100;
+  const maxWpp = pgRetail*(1-pgMargin);
+  const maxWpc = maxWpp*d.participants;
+  const pgProfit = maxWpc - calc.total;
+  const pgMarginOut = maxWpc ? pgProfit/maxWpc : 0;
+  $('pg-wpp').textContent = fmt(maxWpp);
+  $('pg-wpc').textContent = fmt(maxWpc);
+  $('pg-profit').textContent = fmt(pgProfit);
+  $('pg-marginout').textContent = pct(pgMarginOut);
+
+  const sel = calcOption(selectedOption, calc.total, d.participants);
+  const meta = proposalMeta(d);
+
+  $('pr-program').textContent = d.program;
+  $('pr-reseller').textContent = 'Prepared for ' + d.reseller;
+  $('pr-meta-number').textContent = meta.number;
+  $('pr-meta-date').textContent = meta.preparedOn;
+  $('pr-meta-valid').textContent = meta.validThrough;
+  $('pr-meta-contact').textContent = d.contact || '—';
+  $('pr-foot-number').textContent = (meta.number!=='—' ? meta.number+' · ' : '') + 'Prepared ' + meta.preparedOn;
+
+  $('pr-lead').textContent = `${d.program} is a ${d.duration}-week, ${d.format.toLowerCase()} program designed for ${d.participants} participant${d.participants===1?'':'s'} across ${d.teams} team${d.teams===1?'':'s'}. This proposal outlines the program configuration, what's included, and the pricing for ${d.reseller}.`;
+
+  $('pr-duration').textContent = d.duration + ' wks';
+  $('pr-participants').textContent = d.participants;
+  $('pr-teams').textContent = d.teams;
+  $('pr-format').textContent = d.format;
+
+  const includedItems = calc.rows.filter(r => r.included && r.cost > 0);
+  $('pr-included').innerHTML = includedItems.length
+    ? includedItems.map(r => `<li><span class="check">✓</span><span>${includedLine(r)}</span></li>`).join('')
+    : '<li><span class="check">✓</span><span>No components selected yet — return to Configuration.</span></li>';
+
+  $('pr-outcome-quote').textContent = d.outcome ? `"${d.outcome}"` : 'Desired participant outcome not yet captured in Discovery.';
+
+  $('pr-cohortprice').textContent = fmt(sel.grossRevenue);
+  $('pr-retail').textContent = fmt(sel.retail);
+  $('pr-rgp').textContent = fmt(sel.gp);
+}
+
+function selectSuggested(){
+  const d = getDiscovery();
+  selectedOption = orgTypeToOption[d.orgType] || 'D';
+  updateDerived();
+}
+
+/* ---------------- init ---------------- */
+document.querySelectorAll('#panel-1 input, #panel-1 select, #panel-1 textarea').forEach(el=>{
+  el.addEventListener('input', updateDerived);
+  el.addEventListener('change', updateDerived);
+});
+$('pg-retail').addEventListener('input', updateDerived);
+$('pg-margin').addEventListener('input', updateDerived);
+
+renderStepNav();
+buildComponentsTable();
+buildOptionsGrid();
+updateDerived();
+
+/* ---------------- iframe auto-resize (for Squarespace embed) ---------------- */
+(function(){
+  function sendHeight(){
+    var h = document.documentElement.scrollHeight;
+    window.parent.postMessage({ source:'leaf-lab-pricing-engine', height:h }, '*');
+  }
+  if('ResizeObserver' in window){
+    new ResizeObserver(sendHeight).observe(document.body);
+  }
+  window.addEventListener('load', sendHeight);
+  window.addEventListener('resize', sendHeight);
+  setTimeout(sendHeight, 300); // fonts/logo can shift layout slightly after first paint
+})();
+</script>
+</body>
+</html>
